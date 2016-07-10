@@ -1,4 +1,3 @@
-
 // Assign x and y positions to each of the SiPMs
 void setup_sipms(double * sipm_pos_x, double * sipm_pos_y) {
 
@@ -16,3 +15,14 @@ void setup_sipms(double * sipm_pos_x, double * sipm_pos_y) {
   }
 
 }
+
+void get_responses(int N, double x, double y, double * sipm_prob) {
+
+	#include <math.h>
+	cout << "funciona correctamente";
+
+  for(int r = 0; r < NSIPM*NSIPM; r++) {
+    sipm_prob[r] = (1/((4*PI*d_gap)/sqrt(pow((x - sipm_pos_x[r]),2) + pow((y - sipm_pos_y[r]),2) + pow(ze,2)))) * (1 - sqrt((pow((x - sipm_pos_x[r]),2) + pow((y - sipm_pos_y[r]),2) + pow(ze,2))/(pow((x - sipm_pos_x[r]),2) + pow((y - sipm_pos_y[r]),2) + pow((ze + d_gap),2))));
+	}
+	
+}	
