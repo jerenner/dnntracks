@@ -31,5 +31,5 @@ void get_responses(int N, double x, double y, double * sipm_prob) {
   for(int r = 0; r < NSIPM*NSIPM; r++) {
   	sipm_prob[r] = sipm_prob[r]/sigma;
   }
-  	cout << "funciona correctamente" << endl;
+
 }	
