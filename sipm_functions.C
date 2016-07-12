@@ -16,9 +16,9 @@ void setup_sipms(double * sipm_pos_x, double * sipm_pos_y) {
 }
 
 
-void get_responses(int N, double x, double y, double * sipm_prob) {
+void get_responses(int N, int x, int y, double * sipm_prob) {
 
-	TRandom3 a;
+	TRandom3 ran;
 	double mean;
 	double sigma;
 
@@ -37,7 +37,7 @@ void get_responses(int N, double x, double y, double * sipm_prob) {
   }
 
   for(int r = 0; r < NSIPM*NSIPM; r++) {
-  	sipm_prob[r] = a.Gaus(N*sipm_prob[r], N*sipm_prob[r]*(1 - sipm_prob[r]));
+  	sipm_prob[r] = ran.Gaus(N*sipm_prob[r], N*sipm_prob[r]*(1 - sipm_prob[r]));
   }
 	
 }	
