@@ -6,11 +6,11 @@ void setup_sipms(double * sipm_pos_x, double * sipm_pos_y) {
 
   for(int r = 0; r < NSIPM; r++) {
     for(int c = 0; c < NSIPM; c++) {
-      sipm_pos_x[r][c] = sipm_edge_width + r*sipm_pitch;
-      sipm_pos_y[r][c] = sipm_edge_width + c*sipm_pitch;
+      sipm_pos_x[r + c*NSIPM] = sipm_edge_width + r*sipm_pitch;
+      sipm_pos_y[r + c*NSIPM] = sipm_edge_width + c*sipm_pitch;
       if(DEBUG > 1) {
-        cout << "[SIPM (" << r << "," << c << ")] position = (" << sipm_pos_x[r][c] << ","
-             << sipm_pos_y[r][c] << ")" << endl;
+        cout << "[SIPM (" << (r + NSIPM*c) << ")] position = (" << sipm_pos_x[r + c*NSIPM] << ","
+             << sipm_pos_y[r + c*NSIPM] << ")" << endl;
       }
     }
   }
