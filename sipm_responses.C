@@ -37,7 +37,7 @@ void run() {
   
   //Branches:
   
-  tr->Branch("x", &x, "x/D"); // /I??
+  tr->Branch("x", &x, "x/D"); 
   tr->Branch("y", &y, "y/D");
   tr->Branch("sipm_prob", sipm_prob, "sipm_prob[NSIPM*NSIPM]/D");
   
