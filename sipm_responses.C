@@ -26,7 +26,7 @@ void run() {
   
   double max_p = max_xy /grid_space; // number of points per line (40)
   
-  TFile f("simulation_N_1.root"); // TFile in which to store the tree.
+  TFile f("simulation_N_1.root","RECREATE"); // TFile in which to store the tree.
   
   TTree * tr = new TTree("sim_responses","Locations  of  the  grid  points  and  the responses of the SiPMs for each"); 
   
@@ -39,7 +39,7 @@ void run() {
   
   tr->Branch("x", &x, "x/D"); 
   tr->Branch("y", &y, "y/D");
-  tr->Branch("sipm_prob", sipm_prob, "sipm_prob[NSIPM*NSIPM]/D");
+  tr->Branch("sipm_prob", sipm_prob, "sipm_prob[64]/D");
   
   for(x=0; x<(max_p);x++){
 	  
