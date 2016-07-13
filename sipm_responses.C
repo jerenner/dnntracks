@@ -37,8 +37,8 @@ void run() {
   
   //Branches:
   
-  tr->Branch("x", &x, "x/I"); // /I??
-  tr->Branch("y", &y, "y/I");
+  tr->Branch("x", &x, "x/D"); // /I??
+  tr->Branch("y", &y, "y/D");
   tr->Branch("sipm_prob", sipm_prob, "sipm_prob[NSIPM*NSIPM]/D");
   
   for(x=0; x<(max_p);x++){
@@ -59,6 +59,6 @@ void run() {
   }
   
   tr->Write(); //Write the tree to the file
-  f.Close() // Close the file
+  f.Close(); // Close the file
 }
 	
