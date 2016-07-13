@@ -49,7 +49,7 @@ void run() {
 
 		  get_responses(N,x,y,sipm_prob);
 		  
-		  tr->Fill(); //Saves data on the tree
+		  tr->Fill(); 
 		  
 		  // So that the loop keeps working with x, y: 0,1,2..39 we undo the changes of these variables:
 		  x = (x - grid_space/2)/grid_space;
@@ -57,6 +57,8 @@ void run() {
 		   
 		  }
   }
+  
+  tr->Write(); //Write the tree to the file
   f.Close() // Close the file
 }
 	
