@@ -10,3 +10,4 @@ double sipm_edge_width = 5.0;   // width of edge of dice board in mm
 double ze = 10.0;               // distance between SiPM plane and EL gap
 double grid_space = 2.0;        // grid spacing in mm
 double d_gap = 5.0;				// length of EL gap
+int N = 5e6                     // Number of photons
