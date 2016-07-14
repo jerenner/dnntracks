@@ -8,7 +8,7 @@ void init() {
 }
 
 // Main method of script: runs the simulation
-void run() {
+void run(int ni) {
 
   // Load the related script files.
   gROOT->ProcessLine(".L vars.C");
@@ -20,13 +20,12 @@ void run() {
   // Generate SiPM responses for each grid point and save
   // the response array to a TTree.
   
-  int N = 1; // Number of photons
   
   double max_xy = 7*sipm_pitch + 2*sipm_edge_width; // maximum x and y value (80 mm)
   
   double max_p = max_xy /grid_space; // number of points per line (40)
   
-  TFile f("simulation_N_1.root","RECREATE"); // TFile in which to store the tree.
+  TFile f("simulation_ni.root","RECREATE"); // TFile in which to store the tree.
   
   TTree * tr = new TTree("sim_responses","Locations  of  the  grid  points  and  the responses of the SiPMs for each"); 
   
@@ -36,29 +35,26 @@ void run() {
   double * sipm_prob = new double[NSIPM*NSIPM];
   
   //Branches:
-  
+  r
   tr->Branch("x", &x, "x/D"); 
   tr->Branch("y", &y, "y/D");
   tr->Branch("sipm_prob", sipm_prob, "sipm_prob[64]/D");
   
-  for(x=0; x<(max_p);x++){
+  for(int i=0; x<ni;i++){
 	  
-	  for(y=0; y<(max_p);y++){
-		  x = x*grid_space + grid_space/2; // half point of the grid (1,3,5..79)
-		  y = y*grid_space + grid_space/2; // half point of the grid (1,3,5..79)
-
-		  get_responses(N,x,y,sipm_prob);
-		  
-		  tr->Fill(); 
-		  
-		  // So that the loop keeps working with x, y: 0,1,2..39 we undo the changes of these variables:
-		  x = (x - grid_space/2)/grid_space;
-		  y = (y - grid_space/2)/grid_space;
-		   
-		  }
-  }
-  
+	  // We generate a random number [0,1599] rn
+	  
+	  TRandom3 r; // generates a number in interval ]0,1] (0 is excluded)
+      rn = floor(r.Uniform(0,1599)); // integer from [0,1599]
+	  
+	  x = (rn % max_p)*grid_space + 1;
+	  y = (floor(rn/max_p))*grid_space + 1;
+	  
+	  get_responses(ni,x,y,sipm_prob);
+	  
+	  tr->Fill(); 
+	  }  
+	  
   tr->Write(); //Write the tree to the file
   f.Close(); // Close the file
 }
-	
