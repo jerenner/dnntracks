@@ -40,7 +40,7 @@ void run(int ni) {
   tr->Branch("y", &y, "y/D");
   tr->Branch("sipm_prob", sipm_prob, "sipm_prob[64]/D");
   
-  for(int i=0; x<ni;i++){
+  for(int i=0; i < ni; i++){
 	  
 	  // We generate a random number [0,1599] rn
 	  
