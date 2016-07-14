@@ -35,7 +35,6 @@ void run(int ni) {
   double * sipm_prob = new double[NSIPM*NSIPM];
   
   //Branches:
-  r
   tr->Branch("x", &x, "x/D"); 
   tr->Branch("y", &y, "y/D");
   tr->Branch("sipm_prob", sipm_prob, "sipm_prob[64]/D");
