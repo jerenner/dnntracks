@@ -44,8 +44,7 @@ void run(int ni) {
 	  
 	  // We generate a random number [0,1599] rn
 	  
-	  TRandom3 r;
-      rn = floor(r.Uniform(0,1599)); // integer from [0,1599]
+          rn = floor(rd.Uniform(0,1599)); // integer from [0,1599]
 	  
 	  x = (rn % max_p)*grid_space + 1;
 	  y = (floor(rn/max_p))*grid_space + 1;
