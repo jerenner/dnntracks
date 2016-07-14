@@ -21,9 +21,9 @@ void run(int ni) {
   // the response array to a TTree.
   
   
-  double max_xy = 7*sipm_pitch + 2*sipm_edge_width; // maximum x and y value (80 mm)
+  int max_xy = 7*sipm_pitch + 2*sipm_edge_width; // maximum x and y value (80 mm)
   
-  double max_p = max_xy /grid_space; // number of points per line (40)
+  int max_p = max_xy /grid_space; // number of points per line (40)
   
   TFile f("simulation_ni.root","RECREATE"); // TFile in which to store the tree.
   
@@ -31,7 +31,8 @@ void run(int ni) {
   
   //Variables assigned to branches: location(x,y), array of responses
   
-  double x, y;
+  int x, y;
+  int rn;
   double * sipm_prob = new double[NSIPM*NSIPM];
   
   //Branches:
