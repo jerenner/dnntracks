@@ -32,10 +32,12 @@ void run(int ni) {
   //Variables assigned to branches: location(x,y), array of responses
   
   int x, y;
-  int rn;
+  int elpt;
   double * sipm_prob = new double[NSIPM*NSIPM];
   
   //Branches:
+
+  tr->Branch("elpt", &elpt, "elpt/I"); 
   tr->Branch("x", &x, "x/I"); 
   tr->Branch("y", &y, "y/I");
   tr->Branch("sipm_prob", sipm_prob, "sipm_prob[64]/D");
@@ -44,10 +46,10 @@ void run(int ni) {
 	  
 	  // We generate a random number [0,1599] rn
 	  
-          rn = floor(rd.Uniform(0,1599)); // integer from [0,1599]
+          elpt = floor(rd.Uniform(0,1600)); // integer from [0,1599]
 	  
-	  x = (rn % max_p)*grid_space + 1;
-	  y = (floor(rn/max_p))*grid_space + 1;
+	  x = (elpt % max_p)*grid_space + 1;
+	  y = (floor(elpt/max_p))*grid_space + 1;
 	  
 	  get_responses(N,x,y,sipm_prob);
 	  
