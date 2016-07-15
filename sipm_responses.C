@@ -49,7 +49,7 @@ void run(int ni) {
 	  x = (rn % max_p)*grid_space + 1;
 	  y = (floor(rn/max_p))*grid_space + 1;
 	  
-	  get_responses(ni,x,y,sipm_prob);
+	  get_responses(N,x,y,sipm_prob);
 	  
 	  tr->Fill(); 
 	  }  
