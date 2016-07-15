@@ -28,15 +28,15 @@ print "Max x bins = {0}, max y bins = {1}".format(xbmax,ybmax);
 
 # Return the x-location of a given EL point.
 def xloc(elpt):
-    xbin = (int) (elpt / ybmax);
+    xbin = (int) (elpt % xbmax);
     print "xbin for point {0} is = {1}".format(elpt,xbin);
-    return (xbin*wbin);
+    return (xbin*wbin) + 1;
 
 # Return the y-location of a given EL point.
 def yloc(elpt):
-    ybin = (int) (elpt % ybmax);
+    ybin = (int) (elpt / ybmax);
     print "ybin for point {0} is = {1}".format(elpt,ybin);
-    return (ybin*wbin);
+    return (ybin*wbin) + 1;
 
 # Parse the argument: the EL point ID.
 parser = arg.ArgumentParser(description="Input the EL ID argument");
@@ -66,6 +66,7 @@ ip = 0; probs = np.zeros(nsipm*nsipm)
 for p in tr.sipm_prob:
     probs[ip] = p
     ip += 1
+print probs
 minprob = min(probs); probs += abs(minprob)
 print probs
 maxprob = max(probs); probs /= maxprob
@@ -74,8 +75,8 @@ print probs
 #ids = tbl[ndet*pt+19:ndet*(pt+1),1];
 
 # Compute the actual (x,y) location of the EL point.
-xpt = xloc(pt);
-ypt = yloc(pt);
+xpt = xloc(tr.elpt);
+ypt = yloc(tr.elpt);
 print "\nActual location is (x,y) = ({0},{1})".format(xpt,ypt);
 
 # Create circles and plot them according to the probabilities.    
