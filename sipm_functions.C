@@ -26,10 +26,10 @@ void get_responses(int N, int x, int y, double * sipm_prob) {
 	}
 
   for(int r = 0; r < NSIPM*NSIPM; r++) {
-      sipm_prob[r] = rd.Gaus(N*sipm_prob[r], N*sipm_prob[r]*(1 - sipm_prob[r]));
+      sipm_prob[r] = rd.Gaus(N*sipm_prob[r], sqrt(N*sipm_prob[r]*(1 - sipm_prob[r])));
   }
 
-/*  mean = TMath::Mean(64, sipm_prob);
+  mean = TMath::Mean(64, sipm_prob);
   for(int r = 0; r < NSIPM*NSIPM; r++) {
   	sipm_prob[r] = sipm_prob[r] - mean;
   }	
@@ -38,6 +38,6 @@ void get_responses(int N, int x, int y, double * sipm_prob) {
   for(int r = 0; r < NSIPM*NSIPM; r++) {
   	sipm_prob[r] = sipm_prob[r]/sigma;
   }
-*/
+
 
 }	

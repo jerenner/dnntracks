@@ -1,6 +1,6 @@
 
 // Global variables
-#define DEBUG 1
+#define DEBUG 2
 #define NSIPM 8
 
 double * sipm_pos_x = new double[NSIPM*NSIPM];
