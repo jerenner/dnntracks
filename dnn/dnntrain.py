@@ -1,0 +1,282 @@
+"""
+dnntrain.py
+
+Trains the DNN analysis for the specified configuration
+
+"""
+
+import h5py
+import numpy as np
+import tensorflow as tf
+import os
+import logging
+import gc
+import ROOT
+
+import nets.neuralnets
+from dnninputs import *
+
+# Ensure the appropriate directory structure exists.
+if(not os.path.isdir(rdir)): os.mkdir(rdir)
+if(not os.path.isdir("{0}/{1}".format(rdir,rname))): os.mkdir("{0}/{1}".format(rdir,rname))
+if(not os.path.isdir("{0}/{1}/acc".format(rdir,rname))): os.mkdir("{0}/{1}/acc".format(rdir,rname))
+
+# Create the logger object.
+if(log_to_file):
+    logging.basicConfig(filename="{0}/{1}/{2}.log".format(rdir,rname,rname),format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.DEBUG)
+else:
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.DEBUG)
+logging.info("Params:\n ntrain_evts = {0}\n num_epochs = {1}\n epoch_blk_size = {2}\n dtblk_size = {3}\n batch_size = {4}\n nval_evts = {5}".format(ntrain_evts,num_epochs,epoch_blk_size,dtblk_size,batch_size,nval_evts))
+
+# Checks on parameters.
+if(ntrain_evts % dtblk_size != 0):
+    logging.error("ERROR: ntrain_evts must be evenly divisible by dtblk_size..."); exit()
+if(num_epochs % epoch_blk_size != 0):
+    logging.error("ERROR: num_epochs must be evenly divisible by epoch_blk_size..."); exit()
+if(ntrain_evts % batch_size != 0):
+    logging.error("ERROR: ntrain_evts must be evenly divisible by batch_size..."); exit()
+if(nval_evts % batch_size != 0):
+    logging.error("ERROR: nval_evts must be evenly divisible by batch_size..."); exit()
+
+# Constructed file names.
+fn_data = "{0}/{1}.root".format(datdir,dname)
+fn_saver = "{0}/{1}/tfmdl_{2}.ckpt".format(rdir,rname,rname)   # for saving trained network
+fn_acc = "{0}/{1}/acc/accuracy_{2}.dat".format(rdir,rname,rname)
+fn_prob = "{0}/{1}/acc/prob_{2}".format(rdir,rname,rname)
+
+# ---------------------------------------------------------------------------------------
+# Function definitions
+# ---------------------------------------------------------------------------------------
+
+# Evaluate the performance.
+def eval_performance(fsummary,epoch,sess,loss,y_out,dat_train,dat_test,lbl_train,lbl_test):
+
+    logging.info(" \n --- Calling eval_performance\n")
+
+    # ----------------------------
+    # Evaluate the training data.
+    # ----------------------------
+    f_prob_train = open("{0}_train_ep{1}.dat".format(fn_prob,epoch),"w")
+    acc_tr = 0.; lval_tr = 0.
+    nevt = 0; nbatches = 0
+    while(nevt < nval_evts):
+
+        # Run the classification.
+        ltemp,ytemp = sess.run([loss,y_out],feed_dict={x: dat_train[nevt:nevt+batch_size], y_: lbl_train[nevt:nevt+batch_size]})
+        evtno = 0
+        for probs in ytemp:
+
+            # Get the EL point corresponding to this event.
+            elpt = np.argmax(lbl_train[nevt+evtno])
+
+            # Determine if this event was correctly categorized.
+            p = np.argmax(probs)
+            if(p == elpt): acc_tr += 1
+
+            # Write the probabilities to file.
+            f_prob_train.write("{0} {1}".format(elpt," ".join(map(str,probs))))
+
+            evtno += 1
+
+        lval_tr += ltemp
+        nevt += batch_size; nbatches += 1
+
+    f_prob_train.close()
+
+    acc_tr /= nval_evts
+    lval_tr /= nbatches
+
+    # ---------------------------
+    # Evaluate the test data.
+    # ---------------------------
+    f_prob_test = open("{0}_test_ep{1}.dat".format(fn_prob,epoch),"w")
+    acc_te = 0.; lval_te = 0.
+    nevt = 0; nbatches = 0
+    while(nevt < nval_evts):
+
+        # Run the classification.
+        ltemp,ytemp = sess.run([loss,y_out],feed_dict={x: dat_test[nevt:nevt+batch_size], y_: lbl_test[nevt:nevt+batch_size]})
+        evtno = 0
+        for probs in ytemp:
+
+            # Get the EL point corresponding to this event.
+            elpt = np.argmax(lbl_train[nevt+evtno])
+
+            # Determine if this event was correctly categorized.
+            p = np.argmax(probs)
+            if(p == elpt): acc_te += 1
+
+            # Write the probabilities to the file.
+            f_prob_test.write("{0} {1}\n".format(elpt," ".join(map(str,probs))))
+
+            evtno += 1
+
+        lval_te += ltemp
+        nevt += batch_size; nbatches += 1
+
+    f_prob_test.close()
+
+    acc_te /= nval_evts
+    lval_te /= nbatches
+
+    # Write to the final summary file.
+    fsummary.write("{0} {1} {2} {3} {4}\n".format(epoch,acc_tr,lval_tr,acc_te,lval_te))
+
+# Read in all the data from evt_start to evt_end-1.
+def read_data(fdata,evt_start,evt_end):
+
+    nevts = evt_end - evt_start
+
+    logging.info("-- read_data: Reading events from {0} to {1} with {2} sensors and {3} grid points".format(evt_start,evt_end,nsensors,ngrid))
+
+    # Set up the data arrays.
+    dat_sensors = np.zeros([nevts,nsensors]); lbl_sensors = np.zeros([nevts,ngrid])
+
+    # Read in all events from the data file.
+    dat_tree = fdata.sim_responses
+
+    nmap = 0
+    while(nmap < nevts):
+
+        # Get the elements in this entry.
+        dat_tree.GetEntry(nmap)
+
+        # Fill the data array with the sipm probabilities.
+        ss = 0
+        for p in dat_tree.sipm_prob:
+            dat_sensors[nmap][ss] = p
+            ss += 1
+
+        # Set the label to the active EL point.
+        lbl_sensors[nmap][dat_tree.elpt] = 1
+
+        nmap += 1
+
+    # Return the data and labels.
+    return (dat_sensors,lbl_sensors)
+
+# Set up the neural network.
+def net_setup():
+
+    logging.info("\n\n-- net_setup():  SETTING UP NETWORK --")
+
+    logging.info("Creating placeholders for input and output variables...")
+    x_input = tf.placeholder(tf.float32, [batch_size, nsensors]) # npix])
+    y_ = tf.placeholder(tf.float32, [batch_size, ngrid])
+
+    y_out = nets.neuralnets.getNet(net_name,x_input) 
+
+    # Set up for training
+    logging.info("Setting up tf training variables...")
+    cross_entropy = -tf.reduce_sum(y_*tf.log(y_out + 1.0e-9))
+    loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
+    gstep = tf.Variable(0, trainable=False)
+    lrate = tf.train.exponential_decay(opt_lr, gstep,
+                                           opt_ndecayepochs*batches_per_epoch, opt_decaybase, staircase=True)
+    #train_step = tf.train.MomentumOptimizer(learning_rate=opt_lr,momentum=opt_mom).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer(learning_rate=opt_lr,epsilon=opt_eps).minimize(cross_entropy,global_step=gstep)
+    #train_step = tf.train.GradientDescentOptimizer(0.3).minimize(cross_entropy)
+
+    logging.info("Setting up session...")
+    sess = tf.Session()
+    init_op = tf.initialize_all_variables()
+    sess.run(init_op)
+
+    # Create a saver to save the DNN.
+    saver = tf.train.Saver()
+
+    # Load in the previously trained data.
+    if(not train_init):
+        logging.info("Restoring previously trained net from file {0}".format(fn_saver))
+        saver.restore(sess,fn_saver) 
+
+    return (sess,train_step,loss,x_input,y_,y_out,saver)
+
+# -----------------------------------------------------------------------------------------------------
+# Main execution
+# -----------------------------------------------------------------------------------------------------
+
+# Set up the DNN.
+(sess,train_step,loss,x,y_,y_out,saver) = net_setup()
+
+# Open the necessary files.
+f_acc = open(fn_acc,'w')
+f_dat = ROOT.TFile(fn_data)
+
+# Read in a validation set for short checks on accuracy.
+dat_val = np.zeros([batch_size,nsensors]); lbl_val = np.zeros([batch_size,ngrid])
+(dat_val[:],lbl_val[:]) = read_data(f_dat,ntrain_evts,ntrain_evts+batch_size)
+
+# Iterate over all epoch blocks.
+for eblk in range(num_epoch_blks):
+
+    logging.info("\n\n**EPOCH BLOCK {0}".format(eblk))
+
+    # Iterate over data blocks.
+    for dtblk in range(num_dt_blks):
+
+        logging.info("- DATA BLOCK {0}".format(dtblk))
+
+        # Read in the data.
+        evt_start = dtblk*dtblk_size
+        evt_end = (dtblk+1)*dtblk_size
+        dat_train = np.zeros([dtblk_size,nsensors])
+        lbl_train = np.zeros([dtblk_size,ngrid])
+        gc.collect()  # force garbage collection to free memory
+        (dat_train[0:dtblk_size],lbl_train[0:dtblk_size]) = read_data(f_dat,evt_start,evt_end)
+
+        # Iterate over epochs within the block.
+        for ep in range(epoch_blk_size):
+
+            logging.info("-- EPOCH {0} of block size {1}".format(ep,epoch_blk_size))
+
+            # Shuffle the data.
+            logging.info("--- Shuffling data...")
+            perm = np.arange(len(dat_train))
+            np.random.shuffle(perm)
+            dat_train = dat_train[perm]
+            lbl_train = lbl_train[perm]
+
+            # Train the NN in batches.
+            for bnum in range(batches_per_epoch):
+
+                logging.info("--- Training batch {0} of {1}".format(bnum,batches_per_epoch))
+
+                batch_xs = dat_train[bnum*batch_size:(bnum + 1)*batch_size,:]
+                batch_ys = lbl_train[bnum*batch_size:(bnum + 1)*batch_size,:]
+                _, loss_val = sess.run([train_step, loss], feed_dict={x: batch_xs, y_: batch_ys})
+                logging.info("--- Got loss value of {0}".format(loss_val))
+
+            # Run a short accuracy check.
+            acc_train = 0.; acc_test = 0.
+            ltemp,ytemp = sess.run([loss,y_out],feed_dict={x: dat_train[0:batch_size], y_: lbl_train[0:batch_size]})
+            for yin,yout in zip(lbl_train[0:batch_size],ytemp):
+                if(np.argmax(yin) == np.argmax(yout)): acc_train += 1
+            acc_train /= batch_size
+            ltemp,ytemp = sess.run([loss,y_out],feed_dict={x: dat_val, y_: lbl_val})
+            for yin,yout in zip(lbl_val,ytemp):
+                if(np.argmax(yin) == np.argmax(yout)): acc_test += 1
+            acc_test /= batch_size
+            logging.info("--- Training accuracy = {0}; Test accuracy = {1}".format(acc_train,acc_test))
+
+    # Calculate the number of epochs run.
+    epoch = eblk*epoch_blk_size
+    logging.info("Checking accuracy after {0} epochs".format(epoch+1))
+
+    # Read in the data to be used in the accuracy check.
+    dat_train = np.zeros([nval_evts,nsensors]); lbl_train = np.zeros([nval_evts,ngrid])
+    (dat_train[:],lbl_train[:]) = read_data(f_dat,0,nval_evts)
+
+    dat_test = np.zeros([nval_evts,nsensors]); lbl_test = np.zeros([nval_evts,ngrid])
+    (dat_test[:],lbl_test[:]) = read_data(f_dat,ntrain_evts,ntrain_evts+nval_evts)
+
+    # Run the accuracy check.
+    eval_performance(f_acc,epoch,sess,loss,y_out,dat_train,dat_test,lbl_train,lbl_test)
+
+    # Save the trained model.
+    logging.info("Saving trained model to: {0}".format(fn_saver))
+    save_path = saver.save(sess, fn_saver)
+
+# Close the relevant files.
+f_acc.close()
+f_dat.Close()
