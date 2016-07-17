@@ -5,9 +5,9 @@ import logging
 # ---------------------------------------------------------------------------------------------------------
 
 # Directory and run names
-datdir = "/home/jrenner/data"                          # the base data directory
+datdir = "/home/user/data"                          # the base data directory
 dname = "sipm_maps_10000"         # the data name
-rdir = "/home/jrenner/dnn/run_reconstruct"             # the run directory
+rdir = "/home/user/dnn/run_reconstruct"             # the run directory
 rname = "reconstruct_test_8k"
 
 # Net configuration parameters
