@@ -36,10 +36,10 @@ if(len(args) < 2):
 
 # Get the run name and type of plot.
 ptype = args[1]
-if(len(args) > 2):
-  epoch = args[2]
-if(len(args) > 3):
-  evt = args[3]
+#if(len(args) > 2):
+#  epoch = args[2]
+#if(len(args) > 3):
+#  evt = args[3]
 
 evt_start = -1; evt_end = -1
 epoch = -1; si_bg = "bg"
@@ -50,9 +50,9 @@ if(ptype == "prob"):
   else:
     print "Necesita 3 argumentos!"
     exit()
-if(ptype != "summary"):
-    print usage_str
-    exit()
+#if(ptype != "summary"):
+#   print usage_str
+#    exit()
 
 # -----------------------------------------------------------------------------
 # File names and directories
@@ -102,3 +102,38 @@ if(ptype == "summary"):
     #if(plt_show):
     plt.show()
     plt.close()
+
+# Probability plot
+if (ptype == "prob"):
+
+   print "Plotting probability..."
+
+   # Read in the results.
+   probtbl = np.loadtxt(fn_prob)
+   ELpts = probtbl[evt,0]
+   probs = probtbl[evt,1:]*100
+   x_point = []
+   for i in range (0,1600): x_point.append(i)
+   
+   #Plot the results.
+   fig = plt.figure();
+   fig.set_figheight(5.0);
+   fig.set_figwidth(15.0);
+   plt.axvline (x=ELpts, ymin=0, ymax=100, linewidth=2, color='r', linestyle='--') 
+
+   ax1 = fig.add_subplot(111);
+   ax1.plot(x_point, probs, '-', color='blue', lw=1)
+   ax1.set_xlabel("ELpoint")
+   ax1.set_ylabel("Probability")
+   ax1.set_title("")
+   ax1.set_xlim([0,1600]);
+   ax1.set_ylim([0,100]);
+   
+   lnd = plt.legend(loc=4,frameon=False,hadletextpad=0)
+
+   # Show and/or print the plot.
+   fn_plt = "{0}/{1}/plt/{2}_prob.png".format (rdir,rname,rname)
+   plt.savefig(fn_plt, bbox_inches='tight')
+   #if(plt_show):
+   plt.show()
+   plt.close()
