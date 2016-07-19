@@ -36,9 +36,20 @@ if(len(args) < 2):
 
 # Get the run name and type of plot.
 ptype = args[1]
+if(len(args) > 2):
+  epoch = args[2]
+if(len(args) > 3):
+  evt = args[3]
 
 evt_start = -1; evt_end = -1
 epoch = -1; si_bg = "bg"
+if(ptype == "prob"):
+  if(len(args) > 3):
+    epoch = args[2]
+    evt = args[3]
+  else:
+    print "Necesita 3 argumentos!"
+    exit()
 if(ptype != "summary"):
     print usage_str
     exit()
@@ -47,7 +58,7 @@ if(ptype != "summary"):
 # File names and directories
 # -----------------------------------------------------------------------------
 fn_summary = "{0}/{1}/acc/accuracy_{2}.dat".format(rdir,rname,rname)
-fn_svsb = "{0}/{1}/acc/prob_{2}_test_ep{3}.dat".format(rdir,rname,rname,epoch)
+fn_prob = "{0}/{1}/acc/prob_{2}_test_ep{3}.dat".format(rdir,rname,rname,epoch)
 
 if(not os.path.isdir("{0}/{1}/plt".format(rdir,rname))): os.mkdir("{0}/{1}/plt".format(rdir,rname))
 if(not os.path.isdir("{0}/plt".format(datdir))): os.mkdir("{0}/plt".format(datdir))
