@@ -46,7 +46,7 @@ epoch = -1; si_bg = "bg"
 if(ptype == "prob"):
   if(len(args) > 3):
     epoch = args[2]
-    evt = args[3]
+    evt = int(args[3])
   else:
     print "Necesita 3 argumentos!"
     exit()
@@ -119,7 +119,7 @@ if (ptype == "prob"):
    fig = plt.figure();
    fig.set_figheight(5.0);
    fig.set_figwidth(15.0);
-   plt.axvline (x=ELpts, ymin=0, ymax=100, linewidth=2, color='r', linestyle='--') 
+   plt.axvline (x=ELpts, ymin=0, ymax=100, linewidth=2, color='r', linestyle='--', label='Real point') 
 
    ax1 = fig.add_subplot(111);
    ax1.plot(x_point, probs, '-', color='blue', lw=1)
@@ -129,7 +129,7 @@ if (ptype == "prob"):
    ax1.set_xlim([0,1600]);
    ax1.set_ylim([0,100]);
    
-   lnd = plt.legend(loc=4,frameon=False,hadletextpad=0)
+   lnd = plt.legend(loc=4,frameon=False,handletextpad=0)
 
    # Show and/or print the plot.
    fn_plt = "{0}/{1}/plt/{2}_prob.png".format (rdir,rname,rname)
