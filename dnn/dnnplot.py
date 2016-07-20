@@ -17,6 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import h5py
+import math
 from mpl_toolkits.mplot3d import Axes3D
 from math import *
 from dnninputs import *
@@ -50,9 +51,36 @@ if(ptype == "prob"):
   else:
     print "Necesita 3 argumentos!"
     exit()
+if(ptype == "err"):
+   epoch = args[2]
 #if(ptype != "summary"):
 #   print usage_str
 #    exit()
+
+# Detector parameters.
+nsipm=8;
+sipm_pitch=10.;
+sipm_edge_width=5.;
+
+#Variables for computing an ELpoint location.
+xlen = 2*sipm_edge_width+7*sipm_pitch;
+ylen = 2*sipm_edge_width+7*sipm_pitch;
+wbin = 2.0;
+
+#Maximum bins
+xbmax = math.floor(xlen/wbin);
+ybmax = math.floor(ylen/wbin);
+
+# x-location
+def xloc(elpt):
+   xbin = (int)(elpt%xbmax);
+   return (xbin*wbin) + 1;
+
+# y-location
+def yloc(elpt):
+   ybin = (int)(elpt/ybmax);
+   return (ybin*wbin) + 1;
+
 
 # -----------------------------------------------------------------------------
 # File names and directories
@@ -132,8 +160,44 @@ if (ptype == "prob"):
    lnd = plt.legend(loc=4,frameon=False,handletextpad=0)
 
    # Show and/or print the plot.
-   fn_plt = "{0}/{1}/plt/{2}_prob.png".format (rdir,rname,rname)
+   fn_plt = "{0}/{1}/plt/{2}_prob_ep{3}_elpt{4}.png".format (rdir,rname,rname,epoch,ELpts)
    plt.savefig(fn_plt, bbox_inches='tight')
    #if(plt_show):
+   plt.show()
+   plt.close()
+
+# Error plot
+if (ptype == "err"):
+
+   print "Plotting error..."
+
+   # Read in the results.
+   probtbl = np.loadtxt(fn_prob)
+   dist = np.zeros(5000)
+   for earr in range (0,5000):
+      ELpt = probtbl[earr,0]
+      parr = probtbl[earr,1:]
+      ELpt_r = np.argmax (parr)
+      #if (ELpt == ELpt_r):
+         #dist.append(0)
+         #dist[earr] = 0
+      if (ELpt != ELpt_r):
+         xpt = xloc(ELpt)
+         ypt = yloc(ELpt)
+         xpt_r = xloc(ELpt_r)
+         ypt_r = yloc(ELpt_r)
+         d = sqrt(pow(xpt - xpt_r, 2) + pow(ypt - ypt_r, 2))
+         #dist.append(d)
+         dist[earr] = d
+
+   plt.hist(dist, bins=15, normed=False)
+   
+   plt.yscale('log')
+   plt.xlabel ("Error")
+   plt.ylabel ("Frecuency")
+
+   #Show and/or print the plot.
+   fn_plt = "{0}/{1}/plt/{2}_error_ep{3}.png".format (rdir, rname, rname, epoch)
+   plt.savefig(fn_plt, bbox_inches='tight')
    plt.show()
    plt.close()
