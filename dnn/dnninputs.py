@@ -5,10 +5,10 @@ import logging
 # ---------------------------------------------------------------------------------------------------------
 
 # Directory and run names
-datdir = "/home/user/data"                          # the base data directory
-dname = "sipm_maps_10000"         # the data name
-rdir = "/home/user/dnn/run_reconstruct"             # the run directory
-rname = "reconstruct_test_8k"
+datdir = "/home/jrenner/data"                          # the base data directory
+dname = "sipm_maps_50000"         # the data name
+rdir = "/home/jrenner/dnn/run_reconstruct"             # the run directory
+rname = "reconstruct_test_50k"
 
 # Net configuration parameters
 net_name = "MNISTadv"                    # name of the neural net described in nets/neuralnets.py
@@ -19,19 +19,19 @@ nsipm = 8
 ngrid = 1600
 
 # Parameters describing training intervals and number of events for training and validation
-ntrain_evts = 8000    # number of training evts per dataset
-nval_evts = 200       # number of validation events
+ntrain_evts = 40000    # number of training evts per dataset
+nval_evts = 5000       # number of validation events
 num_epochs = 200       # total number of epochs to train
 epoch_blk_size = 1     # number of epochs to run per block (before reading new dataset); set equal to num_epochs unless data to be read in multiple blocks
-dtblk_size = 8000      # number of signal and background events per training block
-batch_size = 200       # training batch size
+dtblk_size = ntrain_evts      # number of signal and background events per training block
+batch_size = 250       # training batch size
 
 # Training optimizer parameters
-opt_lr = 1.0e-4        # optimizer learning rate
+opt_lr = 1.0e-2        # optimizer learning rate
 opt_eps = 1.0e-6       # optimizer epsilon (for AdamOptimizer)
 opt_mom = 0.9          # optimizer momentum
-opt_decaybase = 0.2    # multiplicative factor for learning rate decay
-opt_ndecayepochs = 40  # decay interval: apply decay by a factor of opt_decaybase every opt_ndecayepochs epochs
+opt_decaybase = 0.1    # multiplicative factor for learning rate decay
+opt_ndecayepochs = 50  # decay interval: apply decay by a factor of opt_decaybase every opt_ndecayepochs epochs
 
 # Plotting and logging parameters
 log_to_file = True         # set to True to output log information to a file rather than the console
