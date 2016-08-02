@@ -174,7 +174,7 @@ def net_setup():
     lrate = tf.train.exponential_decay(opt_lr, gstep,
                                            opt_ndecayepochs*batches_per_epoch, opt_decaybase, staircase=True)
     #train_step = tf.train.MomentumOptimizer(learning_rate=opt_lr,momentum=opt_mom).minimize(cross_entropy)
-    train_step = tf.train.AdamOptimizer(learning_rate=opt_lr,epsilon=opt_eps).minimize(cross_entropy,global_step=gstep)
+    train_step = tf.train.AdamOptimizer(learning_rate=lrate,epsilon=opt_eps).minimize(cross_entropy,global_step=gstep)
     #train_step = tf.train.GradientDescentOptimizer(0.3).minimize(cross_entropy)
 
     logging.info("Setting up session...")
@@ -190,14 +190,14 @@ def net_setup():
         logging.info("Restoring previously trained net from file {0}".format(fn_saver))
         saver.restore(sess,fn_saver) 
 
-    return (sess,train_step,loss,x_input,y_,y_out,saver)
+    return (sess,train_step,loss,x_input,y_,y_out,saver,gstep)
 
 # -----------------------------------------------------------------------------------------------------
 # Main execution
 # -----------------------------------------------------------------------------------------------------
 
 # Set up the DNN.
-(sess,train_step,loss,x,y_,y_out,saver) = net_setup()
+(sess,train_step,loss,x,y_,y_out,saver,gstep) = net_setup()
 
 # Open the necessary files.
 f_acc = open(fn_acc,'w')
@@ -206,6 +206,10 @@ f_dat = ROOT.TFile(fn_data)
 # Read in a validation set for short checks on accuracy.
 dat_val = np.zeros([batch_size,nsensors]); lbl_val = np.zeros([batch_size,ngrid])
 (dat_val[:],lbl_val[:]) = read_data(f_dat,ntrain_evts,ntrain_evts+batch_size)
+
+# Set up the arrays for the training and validation evaluation datasets.
+dat_train_eval = []; lbl_train_eval = [] 
+dat_test_eval = []; lbl_test_eval = []
 
 # Iterate over all epoch blocks.
 for eblk in range(num_epoch_blks):
@@ -218,12 +222,13 @@ for eblk in range(num_epoch_blks):
         logging.info("- DATA BLOCK {0}".format(dtblk))
 
         # Read in the data.
-        evt_start = dtblk*dtblk_size
-        evt_end = (dtblk+1)*dtblk_size
-        dat_train = np.zeros([dtblk_size,nsensors])
-        lbl_train = np.zeros([dtblk_size,ngrid])
-        gc.collect()  # force garbage collection to free memory
-        (dat_train[0:dtblk_size],lbl_train[0:dtblk_size]) = read_data(f_dat,evt_start,evt_end)
+        if(num_dt_blks > 1 or eblk == 0):
+            evt_start = dtblk*dtblk_size
+            evt_end = (dtblk+1)*dtblk_size
+            dat_train = np.zeros([dtblk_size,nsensors])
+            lbl_train = np.zeros([dtblk_size,ngrid])
+            gc.collect()  # force garbage collection to free memory
+            (dat_train[0:dtblk_size],lbl_train[0:dtblk_size]) = read_data(f_dat,evt_start,evt_end)
 
         # Iterate over epochs within the block.
         for ep in range(epoch_blk_size):
@@ -245,7 +250,7 @@ for eblk in range(num_epoch_blks):
                 batch_xs = dat_train[bnum*batch_size:(bnum + 1)*batch_size,:]
                 batch_ys = lbl_train[bnum*batch_size:(bnum + 1)*batch_size,:]
                 _, loss_val = sess.run([train_step, loss], feed_dict={x: batch_xs, y_: batch_ys})
-                logging.info("--- Got loss value of {0}".format(loss_val))
+                logging.info("--- [Step {0}] Got loss value of {1}".format(sess.run(gstep),loss_val))
 
             # Run a short accuracy check.
             acc_train = 0.; acc_test = 0.
@@ -264,14 +269,16 @@ for eblk in range(num_epoch_blks):
     logging.info("Checking accuracy after {0} epochs".format(epoch+1))
 
     # Read in the data to be used in the accuracy check.
-    dat_train = np.zeros([nval_evts,nsensors]); lbl_train = np.zeros([nval_evts,ngrid])
-    (dat_train[:],lbl_train[:]) = read_data(f_dat,0,nval_evts)
+    if(len(dat_train_eval) == 0):
+        dat_train_eval = np.zeros([nval_evts,nsensors]); lbl_train_eval = np.zeros([nval_evts,ngrid])
+        (dat_train_eval[:],lbl_train_eval[:]) = read_data(f_dat,0,nval_evts)
 
-    dat_test = np.zeros([nval_evts,nsensors]); lbl_test = np.zeros([nval_evts,ngrid])
-    (dat_test[:],lbl_test[:]) = read_data(f_dat,ntrain_evts,ntrain_evts+nval_evts)
+    if(len(dat_test_eval) == 0):
+        dat_test_eval = np.zeros([nval_evts,nsensors]); lbl_test_eval = np.zeros([nval_evts,ngrid])
+        (dat_test_eval[:],lbl_test_eval[:]) = read_data(f_dat,ntrain_evts,ntrain_evts+nval_evts)
 
     # Run the accuracy check.
-    eval_performance(f_acc,epoch,sess,loss,y_out,dat_train,dat_test,lbl_train,lbl_test)
+    eval_performance(f_acc,epoch,sess,loss,y_out,dat_train_eval,dat_test_eval,lbl_train_eval,lbl_test_eval)
 
     # Save the trained model.
     logging.info("Saving trained model to: {0}".format(fn_saver))
